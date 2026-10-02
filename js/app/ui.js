@@ -9,6 +9,13 @@ export const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
 export const speciesName = (id) => (id === 'mixed' ? 'Mixed' : SPECIES[id]?.name ?? id);
 
+// What a module grows, as a plural: "Oak trees", "Geodes", "surprise trees".
+export function speciesNoun(id) {
+  if (id === 'mixed') return 'surprise trees';
+  const sp = SPECIES[id];
+  return sp?.tags.includes('mineral') ? `${sp.name}s` : `${speciesName(id)} trees`;
+}
+
 export const dot = (colour) => `<span class="dot" style="--c: var(--series-${colour})" aria-hidden="true"></span>`;
 
 export function moduleLabel(m) {

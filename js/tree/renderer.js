@@ -15,12 +15,18 @@ const easeOutBack = (t) => 1 + 2.6 * (t - 1) ** 3 + 1.6 * (t - 1) ** 2;
 const f1 = (n) => Math.round(n * 10) / 10;
 const r1 = (n) => Math.max(0.1, f1(n));
 
-const TILE = { lush: { h: 95, s: 35, l: 68 }, dry: { h: 45, s: 40, l: 74 }, sand: { h: 40, s: 45, l: 80 }, snow: { h: 210, s: 30, l: 94 } };
+const TILE = { lush: { h: 95, s: 35, l: 68 }, dry: { h: 45, s: 40, l: 74 }, sand: { h: 40, s: 45, l: 80 }, snow: { h: 210, s: 30, l: 94 }, stone: { h: 30, s: 10, l: 70 } };
 const DEAD_TILE = { h: 30, s: 18, l: 62 };
 
+// `lift` raises everything except ground-fixed paths, so a potted tree
+// grows from the pot's soil while the pot and ground stay put.
 class Layers {
-  constructor() { this.groups = new Map(); }
-  add(z, attrs, d) {
+  constructor(lift = 0) {
+    this.groups = new Map();
+    this.shift = lift ? ` transform="translate(0 ${f1(-lift)})"` : '';
+  }
+  add(z, attrs, d, fixed = false) {
+    if (!fixed) attrs += this.shift;
     const key = `${z}|${attrs}`;
     let g = this.groups.get(key);
     if (!g) this.groups.set(key, (g = { z, attrs, d: [], order: this.groups.size }));
@@ -201,9 +207,9 @@ function drawPrims(out, tree, p, S, T, dead) {
   for (const pr of tree.prims) {
     let fc = pr.fill, sc = pr.stroke;
     if (dead) {
-      if (pr.kind !== 'extra' || !pr.dead || pr.dead === 'hide') continue;
+      if (!pr.dead || pr.dead === 'hide') continue;
       if (typeof pr.dead === 'object') { fc = pr.dead.fill ?? fc; sc = pr.dead.stroke ?? sc; }
-    }
+    } else if (pr.deadOnly) continue;
     const a = appearance(pr, p, (pr.d ?? 0) / tree.maxD);
     if (a <= 0.01) continue;
     const s = pr.ground ? a : easeOutBack(a);
@@ -215,18 +221,18 @@ function drawPrims(out, tree, p, S, T, dead) {
     switch (pr.shape) {
       case 'ellipse': {
         const [x, y] = P(pr.x, pr.y);
-        out.add(pr.z, attrs, ellipsePath(x, y, pr.rx * s * K, pr.ry * s * K, -(pr.rot ?? 0)));
+        out.add(pr.z, attrs, ellipsePath(x, y, pr.rx * s * K, pr.ry * s * K, -(pr.rot ?? 0)), pr.ground);
         break;
       }
-      case 'poly': out.add(pr.z, attrs, polyPath(pr.pts.map(([x, y]) => P(x, y)))); break;
-      case 'polyline': out.add(pr.z, attrs, linePath(pr.pts.map(([x, y]) => P(x, y)))); break;
+      case 'poly': out.add(pr.z, attrs, polyPath(pr.pts.map(([x, y]) => P(x, y))), pr.ground); break;
+      case 'polyline': out.add(pr.z, attrs, linePath(pr.pts.map(([x, y]) => P(x, y))), pr.ground); break;
       case 'lines':
-        out.add(pr.z, attrs, pr.segs.map(([x1, y1, x2, y2]) => linePath([P(x1, y1), P(x2, y2)])).join(''));
+        out.add(pr.z, attrs, pr.segs.map(([x1, y1, x2, y2]) => linePath([P(x1, y1), P(x2, y2)])).join(''), pr.ground);
         break;
       case 'quad': {
         const [x0, y0, cx, cy, x1, y1] = pr.p;
         const [a0, b0] = P(x0, y0), [ac, bc] = P(cx, cy), [a1, b1] = P(x1, y1);
-        out.add(pr.z, attrs, `M${f1(a0)} ${f1(b0)}Q${f1(ac)} ${f1(bc)} ${f1(a1)} ${f1(b1)}`);
+        out.add(pr.z, attrs, `M${f1(a0)} ${f1(b0)}Q${f1(ac)} ${f1(bc)} ${f1(a1)} ${f1(b1)}`, pr.ground);
         break;
       }
     }
@@ -235,17 +241,20 @@ function drawPrims(out, tree, p, S, T, dead) {
 
 function drawGround(out, g, dead) {
   const t = dead ? DEAD_TILE : TILE[g.ground] ?? TILE.lush;
-  out.add(0, fill(hsl(t)), ellipsePath(0, 2, 64, 8.5));
-  out.add(1, fill(hsl(t, -10, -5)), ellipsePath(0, 0.8, 15, 3));
+  out.add(0, fill(hsl(t)), ellipsePath(0, 2, 64, 8.5), true);
+  out.add(1, fill(hsl(t, -10, -5)), ellipsePath(0, 0.8, 15, 3), true);
 }
 
 // Seed and first two leaves, fading out as the real tree takes over.
+// Minerals (no branches) start from a grey stone instead and sprout nothing.
 function drawSprout(out, tree, p, S, T, F) {
   if (p >= 0.3) return;
+  const bare = !tree.branches.length;
+  if (p < 0.04) out.add(2, fill(bare ? 'hsl(220,8%,55%)' : 'hsl(28,40%,32%)'), ellipsePath(0, -0.6, 2.4, 1.6));
+  if (bare) return;
   const vis = visible(tree.branches[0].pts, F);
   const tip = vis ? vis[vis.length - 1] : { x: 0, y: 0 };
   const x = tip.x * T, y = -tip.y * T;
-  if (p < 0.04) out.add(2, fill('hsl(28,40%,32%)'), ellipsePath(0, -0.6, 2.4, 1.6));
   const k = 3.4 * S * (0.5 + p * 2);
   const leaf = fill(`hsla(100,50%,45%,${f1(1 - p / 0.3)})`);
   out.add(36, leaf, ellipsePath(x + k * 0.9, y - k * 0.3, k, k * 0.42, -30));
@@ -257,7 +266,7 @@ function drawSprout(out, tree, p, S, T, F) {
 function drawTufts(out, tree, p, T, F) {
   const tone = tree.genome.foliage[0]?.tones[0];
   const fade = 1 - clamp01((p - 0.6) / 0.3);
-  if (!tone || fade <= 0 || p < 0.08) return;
+  if (!tone || fade <= 0 || p < 0.08 || !tree.branches.length) return;
   const r = (2.4 + 2.8 * Math.min(1, p * 2)) * T;
   const body = [], shade = [];
   for (const b of tree.branches) {
@@ -273,12 +282,13 @@ function drawTufts(out, tree, p, T, F) {
   out.add(29.5, fill(hsl({ ...tone, a }, 4)), body.join(''));
 }
 
-// Brown leaf litter under a tree that died with foliage.
+// Brown leaf litter under a tree that died with foliage (on the soil, if potted).
 function drawLitter(out, tree, S) {
-  if (!tree.genome.foliage.length) return;
+  if (!tree.genome.foliage.length || !tree.branches.length) return;
   const rng = new Rng(hashString(`${tree.genome.seed}:litter`));
+  const spread = tree.pot ? tree.pot.w * 0.4 : 32;
   const d = [];
-  for (let i = 0; i < 9; i++) d.push(ellipsePath(rng.signed(32) * S, -rng.range(0.3, 1.8) * S, 1.7 * S, 0.8 * S, rng.range(0, 180)));
+  for (let i = 0; i < 9; i++) d.push(ellipsePath(rng.signed(spread) * S, -rng.range(0.3, 1.8) * S, 1.7 * S, 0.8 * S, rng.range(0, 180)));
   out.add(55, fill('hsl(30,35%,38%)'), d.join(''));
 }
 
@@ -287,7 +297,7 @@ export function renderTree(tree, { progress = 1, dead = false, ground = true, cl
   const S = tree.fit;
   const T = S * (0.28 + 0.72 * easeOutCubic(p));
   const F = Math.min(1, p * 1.18) * (tree.maxD + 12);
-  const out = new Layers();
+  const out = new Layers((tree.lift ?? 0) * S);
 
   if (ground) drawGround(out, tree.genome, dead);
   drawBark(out, tree, T, F, dead);

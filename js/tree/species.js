@@ -3,9 +3,9 @@
 // Angles are in degrees, lengths in world units (ground at y = 0, ~200 tall).
 //
 // A species picks one part from each slot:
-//   rule     how the skeleton grows    (fork | leader | palm | cactus)
+//   rule     how the skeleton grows    (fork | leader | palm | cactus | mineral)
 //   bark     colour + texture style    (plain | gnarled | birch | rings | ribs | nodes)
-//   foliage  one or more layers        (clusters | scatter | sprays | strands | fronds)
+//   foliage  one or more layers        (clusters | scatter | sprays | strands | fronds | crystals | geode)
 //   accents  optional decorations      (fruit | blossom | glow | cones | flowers | coconuts)
 //   extras   chance of ground/ambient  (grass, flowers, mushrooms, rocks, fallen, ...)
 
@@ -314,6 +314,49 @@ export const SPECIES = {
       tones: [tone([85, 105], [40, 55], [35, 42]), tone([90, 110], [40, 55], [42, 48])],
     }],
     extras: { grass: 0.7, rocks: 0.4 },
+    ground: 'lush',
+  },
+
+  // Minerals have no skeleton: their one foliage layer draws the whole form,
+  // and `bark` is the colour of the host rock. Each tree picks one tone.
+  crystal: {
+    name: 'Crystal',
+    tags: ['mineral'],
+    rule: 'mineral',
+    genes: { count: [4, 8.4], height: [60, 90], width: [11, 16], spread: [14, 22], fan: [16, 28], lean: [-6, 6] },
+    bark: { style: 'plain', h: [25, 40], s: [6, 12], l: [36, 44] },
+    foliage: [{
+      type: 'crystals',
+      tones: [
+        tone([270, 285], [45, 60], [55, 65]), // amethyst
+        tone([200, 215], [15, 25], [80, 86]), // quartz
+        tone([340, 350], [45, 60], [76, 82]), // rose quartz
+        tone([38, 46], [75, 90], [58, 66]),   // citrine
+        tone([145, 160], [45, 60], [40, 48]), // emerald
+        tone([215, 228], [55, 70], [48, 56]), // sapphire
+      ],
+    }],
+    extras: { rocks: 0.6, grass: 0.3 },
+    ground: 'stone',
+  },
+
+  geode: {
+    name: 'Geode',
+    tags: ['mineral'],
+    rule: 'mineral',
+    genes: { width: [68, 86], aspect: [0.78, 0.92], lump: [0.03, 0.08], rind: [4, 5.5], bands: [2, 3.4], points: [30, 44] },
+    bark: { style: 'plain', h: [25, 40], s: [8, 15], l: [38, 46] },
+    foliage: [{
+      type: 'geode',
+      tones: [
+        tone([268, 285], [45, 60], [50, 60]), // amethyst
+        tone([38, 46], [75, 90], [56, 64]),   // citrine
+        tone([200, 215], [15, 25], [80, 86]), // quartz
+        tone([200, 212], [40, 55], [58, 66]), // blue agate
+        tone([340, 350], [45, 60], [72, 80]), // rose quartz
+      ],
+    }],
+    extras: { grass: 0.7, flowers: 0.3 },
     ground: 'lush',
   },
 };

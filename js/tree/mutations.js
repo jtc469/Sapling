@@ -81,6 +81,23 @@ export const MUTATIONS = {
     when: () => true,
     apply(g) { g.sizeScale *= 1.25; },
   },
+  bonsai: {
+    label: 'Bonsai', rarity: 'epic', chance: 0.012, excludes: ['giant'],
+    when: (g) => (g.rule === 'fork' || g.rule === 'leader') && !has(g, 'grass'),
+    apply(g, rng) {
+      // A miniature of the same species: half the height, a stouter trunk and
+      // a windswept lean. Leaf pads scale by sqrt(size), so they stay chunky.
+      g.sizeScale *= 0.5;
+      g.genes.trunkWidth *= 1.15;
+      g.genes.lean = (g.genes.lean ?? 0) + rng.signed(14);
+      g.genes.wobble = (g.genes.wobble ?? 3) * 1.4;
+      for (const layer of g.foliage) if (layer.type === 'sprays') layer.size *= 0.7;
+      // Planted in a pot (extras.pot), with moss on the soil instead of ground clutter.
+      for (const k of ['grass', 'flowers', 'mushrooms', 'rocks', 'fallen', 'swing', 'nest']) g.extras[k] = false;
+      g.extras.moss = true;
+      g.extras.pot = true;
+    },
+  },
   variegated: {
     label: 'Variegated', rarity: 'rare', chance: 0.03,
     when: hasLeaves,
@@ -110,7 +127,7 @@ export const MUTATIONS = {
   },
   crystal: {
     label: 'Crystal', rarity: 'legendary', chance: 0.005, colour: true,
-    when: () => true,
+    when: (g) => !has(g, 'mineral'),
     apply(g, rng) {
       recolour(g, rng, [[[180, 200], [60, 80], [70, 80], 0.75], [[260, 280], [50, 70], [78, 86], 0.75]]);
       Object.assign(g.bark, { h: 200, s: 25, l: 60 });
@@ -129,11 +146,13 @@ export const MUTATIONS = {
 };
 
 export function applyMutations(g, rng, forced) {
-  const ids = Object.keys(MUTATIONS).filter((id) => {
+  const rolled = Object.keys(MUTATIONS).filter((id) => {
     const m = MUTATIONS[id];
     if (!m.when(g)) return false;
     return forced ? forced.includes(id) : rng.fork(id).chance(m.chance);
   });
+  // Some traits contradict each other (a bonsai can't be giant).
+  const ids = rolled.filter((id) => !rolled.some((o) => MUTATIONS[o].excludes?.includes(id)));
   const colour = ids.filter((id) => MUTATIONS[id].colour).sort((a, b) => rank(b) - rank(a));
   const chosen = ids.filter((id) => !MUTATIONS[id].colour).concat(colour.slice(0, 1));
 

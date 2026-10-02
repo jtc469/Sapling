@@ -207,4 +207,121 @@ function fronds(B, L, rng) {
   }
 }
 
-export const FOLIAGE = { clusters, scatter, sprays, strands, fronds };
+// ---------- Minerals (rule: mineral) ----------
+// Mineral prims keep a dull grey `dead` fill, so a withered crystal reads as
+// clouded rather than vanishing, and `deadOnly` cracks appear across it.
+
+const DEAD_STONE = { h: 220, s: 6, l: 55 };
+const CRACK = 'hsl(220,8%,30%)';
+
+// One faceted column: three side faces and their pointed terminations,
+// lit from the upper left. Positive `v` is the side facing the light.
+function prism(B, c, tone, z, d, rng) {
+  const ux = Math.cos(c.angle), uy = Math.sin(c.angle);
+  const at = (s, v) => [c.x + ux * s - uy * v, c.y + uy * s + ux * v];
+  const L = c.length, h = c.width / 2;
+  const tip = Math.min(L * 0.4, c.width * 1.1);
+  const shoulder = (v) => L - tip * (0.6 + (0.4 * Math.abs(v)) / h);
+  const apex = at(L, rng.signed(h * 0.15));
+  const edges = [h, h * 0.3, -h * 0.3, -h];
+  const base = { shape: 'poly', kind: 'foliage', d, ax: c.x, ay: c.y, z };
+
+  [[10, 16], [0, 7], [-12, -5]].forEach(([side, top], i) => {
+    const v0 = edges[i], v1 = edges[i + 1];
+    const s0 = at(shoulder(v0), v0), s1 = at(shoulder(v1), v1);
+    B.add({ ...base, pts: [at(-3, v0), s0, s1, at(-3, v1)], fill: hsl(tone, side), dead: { fill: hsl(DEAD_STONE, side * 0.6) } });
+    B.add({ ...base, pts: [s0, apex, s1], fill: hsl(tone, top), dead: { fill: hsl(DEAD_STONE, top * 0.6) } });
+  });
+  B.add({ ...base, shape: 'polyline', pts: [at(L * 0.12, h * 0.72), at(shoulder(h) - 1.5, h * 0.72)], stroke: hsl({ ...tone, a: 0.7 }, 25), sw: 0.7, z: z + 0.05 });
+  const m = L * rng.range(0.35, 0.6);
+  B.add({ ...base, shape: 'polyline', pts: [at(m, h * 0.9), at(m + 3, h * 0.1), at(m - 1, -h * 0.4), at(m + 2, -h * 0.9)], stroke: CRACK, sw: 0.5, z: z + 0.06, dead: 'keep', deadOnly: true });
+  B.crowns.push({ x: apex[0], y: apex[1], d, w: c.width });
+}
+
+// A cluster of crystal columns fanning out of a lump of host rock.
+function crystals(B, L, rng) {
+  const { G, g } = B;
+  const k = g.sizeScale;
+  const tone = rng.pick(L.tones);
+  const n = Math.max(3, Math.round(G.count));
+  const cols = [];
+  for (let i = 0; i < n; i++) {
+    // u runs -1..1 across the cluster: tall upright columns in the middle,
+    // shorter ones leaning further out at the edges.
+    const u = clamp((i / (n - 1)) * 2 - 1 + rng.signed(0.2), -1, 1);
+    const out = Math.abs(u);
+    cols.push({
+      x: u * G.spread * k, y: 1,
+      angle: (90 + G.lean - u * G.fan + rng.signed(6)) * DEG,
+      length: G.height * k * (1 - out * 0.5) * rng.range(0.7, 1.05),
+      width: G.width * Math.sqrt(k) * (1 - out * 0.3) * rng.range(0.8, 1.15),
+    });
+  }
+  // Tallest first: they grow first and sit behind the shorter ones.
+  cols.sort((a, b) => b.length - a.length);
+  cols.forEach((c, i) => prism(B, c, { ...tone, l: tone.l + rng.signed(5) }, 30 + i * 0.1, (i / n) * 0.7, rng));
+
+  // The rock they grow from hides their roots.
+  const rx = G.spread * k + G.width * 0.4, ry = 9 * Math.sqrt(k);
+  const pts = [];
+  for (let i = 0; i <= 12; i++) {
+    const a = (Math.PI * i) / 12;
+    const r = 1 + rng.signed(0.12);
+    pts.push([Math.cos(a) * rx * r, Math.max(-0.5, Math.sin(a) * ry * r - 0.5)]);
+  }
+  const base = { kind: 'foliage', d: 0, ax: 0, ay: 0, dead: 'keep' };
+  B.add({ ...base, shape: 'poly', pts, fill: hsl(g.bark), z: 33.8 });
+  B.add({ ...base, shape: 'ellipse', x: -rx * 0.3, y: ry * 0.5, rx: rx * 0.3, ry: ry * 0.28, fill: hsl(g.bark, 8), z: 33.9 });
+}
+
+// A split geode: a lumpy rind around agate bands and a cavity lined with
+// crystal points. It fills in from the rind towards the centre.
+function geode(B, L, rng) {
+  const { G, g } = B;
+  const k = g.sizeScale;
+  const tone = rng.pick(L.tones);
+  const rx = (G.width / 2) * k, ry = rx * G.aspect;
+  const cy = ry - 2; // sunk a little into the ground
+  const ph1 = rng.range(0, 7), ph2 = rng.range(0, 7);
+  const lump = (a) => 1 + G.lump * (Math.sin(a * 3 + ph1) * 0.6 + Math.sin(a * 5 + ph2) * 0.4);
+  // Every layer follows the same lumpy outline, inset from the rind.
+  const wall = (a, inset) => [Math.cos(a) * lump(a) * (rx - inset), cy + Math.sin(a) * lump(a) * (ry - inset)];
+  const ring = (inset, from = 0, to = Math.PI * 2, n = 32) => Array.from({ length: n }, (_, i) => wall(from + ((to - from) * i) / n, inset));
+  const centre = { ax: 0, ay: cy };
+  const base = { shape: 'poly', kind: 'foliage' };
+
+  // Rind: it rises out of the ground first.
+  B.add({ ...base, d: 0, ax: 0, ay: 0, pts: ring(0).map(([x, y]) => [x + 1, y - 1]), fill: hsl(g.bark, -10), z: 30, dead: 'keep' });
+  B.add({ ...base, d: 0, ax: 0, ay: 0, pts: ring(0), fill: hsl(g.bark), z: 30.1, dead: 'keep' });
+  B.add({ ...base, shape: 'polyline', d: 0, ax: 0, ay: 0, pts: ring(0.9, 1.9, 2.9, 8), stroke: hsl(g.bark, 12), sw: 1.1, z: 30.15, dead: 'keep' });
+
+  // Agate bands, alternating milky chalcedony and a pale wash of the crystal colour.
+  const R = G.rind * Math.sqrt(k), bw = 2.3 * Math.sqrt(k), nb = Math.round(G.bands);
+  const bands = [{ h: tone.h, s: 12, l: 90 }, { h: tone.h, s: tone.s * 0.5, l: Math.min(92, tone.l + 18) }];
+  for (let j = 0; j < nb; j++) {
+    B.add({ ...base, ...centre, d: 0.15 + j * 0.06, pts: ring(R + j * bw), fill: hsl(bands[j % 2]), z: 30.2 + j * 0.01, dead: { fill: hsl(DEAD_STONE, 18 - j * 4) } });
+  }
+  const inset = R + nb * bw;
+  B.add({ ...base, ...centre, d: 0.35, pts: ring(inset), fill: hsl(tone, -22), z: 30.4, dead: { fill: hsl(DEAD_STONE, -20) } });
+
+  // Crystal points growing from the cavity wall towards the middle, each
+  // split into a lit and a shaded facet.
+  const n = Math.round(G.points);
+  const da = (Math.PI / n) * 1.15;
+  for (let i = 0; i < n; i++) {
+    const a = ((i + rng.range(0, 0.6)) / n) * Math.PI * 2;
+    const [mx, my] = wall(a, inset - 0.6);
+    const reach = rng.range(0.22, 0.45);
+    const apex = [mx * (1 - reach), my + (cy - my) * reach];
+    const shade = rng.pick([0, 6]);
+    const pt = { ...base, d: 0.45 + rng.range(0, 0.5), ax: mx, ay: my, z: 30.5 };
+    B.add({ ...pt, pts: [wall(a - da, inset - 0.6), [mx, my], apex], fill: hsl(tone, 8 + shade), dead: { fill: hsl(DEAD_STONE, 4) } });
+    B.add({ ...pt, pts: [[mx, my], wall(a + da, inset - 0.6), apex], fill: hsl(tone, -6 + shade), dead: { fill: hsl(DEAD_STONE, -6) } });
+    if (i % 6 === 0) B.crowns.push({ x: apex[0], y: apex[1], d: pt.d, w: 4 });
+  }
+
+  const top = wall(Math.PI * 0.45, 0), mid = wall(Math.PI * 1.4, inset);
+  B.add({ ...base, shape: 'polyline', d: 0, ax: 0, ay: 0, pts: [top, [top[0] + 3, cy + ry * 0.4], [-2, cy + 2], mid], stroke: CRACK, sw: 0.7, z: 30.6, dead: 'keep', deadOnly: true });
+}
+
+export const FOLIAGE = { clusters, scatter, sprays, strands, fronds, crystals, geode };
