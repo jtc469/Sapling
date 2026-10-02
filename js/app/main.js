@@ -47,5 +47,7 @@ store.subscribe((data) => {
 session.onTick(updateChrome);
 window.addEventListener('hashchange', route);
 
-session.resume();
+// Recovery can finish a session and notify subscribers synchronously.
+// Mount the initial view before those subscribers try to render it.
 route();
+session.resume();
