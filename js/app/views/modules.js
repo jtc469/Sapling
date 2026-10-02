@@ -1,8 +1,8 @@
-// Modules: add, rename, recolour, choose a species, archive. Plus settings and backups.
+// Modules: add, rename, recolour, archive. Plus settings and backups.
+// Each module's species is picked at random when it's added.
 
-import { store, actions, nextSpecies, COLOUR_SLOTS } from '../store.js';
-import { SPECIES_IDS } from '../../tree/index.js';
-import { esc, dot, speciesName, confirmDialog, toast } from '../ui.js';
+import { store, actions, COLOUR_SLOTS } from '../store.js';
+import { esc, dot, speciesName, speciesNoun, confirmDialog, toast } from '../ui.js';
 import { formatMinutes } from '../time.js';
 
 let root = null;
@@ -31,15 +31,12 @@ export const modulesView = {
       <section class="page narrow">
         <header class="page-head">
           <h1 class="display">Modules</h1>
-          <p class="lede">Each module grows its own kind of tree, so your forest shows where your revision went.</p>
+          <p class="lede">Each module grows its own kind of tree (or crystal), picked at random when you add it, so your forest shows where your revision went.</p>
         </header>
 
         <form class="card-panel add-module" data-form="add">
           <label class="field grow">Module name
             <input name="name" placeholder="e.g. Complex Analysis" maxlength="40" required autocomplete="off">
-          </label>
-          <label class="field">Tree
-            ${speciesSelect('species', nextSpecies())}
           </label>
           <button class="primary" type="submit">Add module</button>
         </form>
@@ -83,11 +80,6 @@ export const modulesView = {
   },
 };
 
-function speciesSelect(name, value, attrs = '') {
-  const options = [...SPECIES_IDS, 'mixed'].map((id) => `<option value="${id}" ${id === value ? 'selected' : ''}>${speciesName(id)}</option>`).join('');
-  return `<select name="${name}" ${attrs}>${options}</select>`;
-}
-
 function row(m, min, data) {
   const used = new Set(data.modules.filter((x) => !x.archived && x.id !== m.id).map((x) => x.colour));
   const swatches = Array.from({ length: COLOUR_SLOTS }, (_, i) => i + 1).map((c) => `
@@ -101,8 +93,7 @@ function row(m, min, data) {
       </details>
       <label class="sr-only" for="name-${m.id}">Module name</label>
       <input class="module-name" id="name-${m.id}" value="${esc(m.name)}" maxlength="40" data-rename="${m.id}">
-      <label class="sr-only" for="species-${m.id}">Tree species</label>
-      ${speciesSelect('species', m.species, `id="species-${m.id}" data-species="${m.id}"`)}
+      <span class="module-species nowrap">${speciesName(m.species)}</span>
       <span class="muted nowrap">${formatMinutes(min)}</span>
       <button type="button" class="icon-button" data-remove="${m.id}" aria-label="Remove ${esc(m.name)}" title="Remove">×</button>
     </li>`;
@@ -137,8 +128,6 @@ function onChange(e) {
     const name = t.value.trim();
     if (name) actions.updateModule(t.dataset.rename, { name });
     else t.value = store.get().modules.find((m) => m.id === t.dataset.rename).name;
-  } else if (t.dataset.species) {
-    actions.updateModule(t.dataset.species, { species: t.value });
   } else if (t.dataset.setting === 'strict') {
     actions.updateSettings({ strict: t.checked });
   } else if (t.dataset.setting === 'graceSec') {
@@ -154,8 +143,8 @@ function onSubmit(e) {
   const form = new FormData(e.target);
   const name = String(form.get('name')).trim();
   if (!name) return;
-  actions.addModule({ name, species: form.get('species') });
-  toast(`Added ${name}`);
+  const m = actions.addModule({ name });
+  toast(`Added ${m.name}. It grows ${speciesNoun(m.species)}.`);
   root.querySelector('[data-form="add"] input[name="name"]')?.focus();
 }
 

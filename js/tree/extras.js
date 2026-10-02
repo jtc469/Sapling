@@ -10,6 +10,7 @@ const GRASS = {
   dry: { h: 48, s: 40, l: 55 },
   sand: { h: 75, s: 30, l: 45 },
   snow: { h: 110, s: 20, l: 45 },
+  stone: { h: 80, s: 20, l: 42 },
 };
 const STRAW = hsl({ h: 40, s: 30, l: 52 });
 const FLOWER_COLOURS = [{ h: 0, s: 0, l: 97 }, { h: 50, s: 95, l: 60 }, { h: 330, s: 70, l: 70 }, { h: 270, s: 50, l: 70 }, { h: 200, s: 70, l: 65 }];
@@ -168,7 +169,36 @@ function moss(B, rng) {
   }
 }
 
-const EXTRAS = { grass, flowers, mushrooms, rocks, fallen, snow, fireflies, nest, swing, moss };
+const GLAZES = [
+  { h: 18, s: 50, l: 45 },  // terracotta
+  { h: 205, s: 45, l: 40 }, // cobalt
+  { h: 150, s: 22, l: 52 }, // celadon
+  { h: 220, s: 8, l: 30 },  // charcoal
+  { h: 40, s: 30, l: 78 },  // cream
+];
+
+// A shallow bonsai pot sized to the crown. Its rim height is stored as
+// B.pot so the renderer can lift the tree onto the soil.
+function pot(B, rng) {
+  const box = crownBox(B);
+  const w = Math.max(30, Math.min(56, (box.maxX - box.minX) * 0.55));
+  const h = 7 + w * 0.08;
+  B.pot = { w, h };
+  const glaze = rng.pick(GLAZES);
+  const half = w / 2, foot = 1.4, rim = 1.8;
+  const base = { shape: 'poly', kind: 'extra', at: 0, ground: true, dead: 'keep' };
+  for (const sx of [-1, 1]) {
+    const x0 = sx * half * 0.7, x1 = x0 - sx * 4;
+    B.add({ ...base, pts: [[x0, 0], [x1, 0], [x1, foot], [x0, foot]], fill: hsl(glaze, -14), z: 24 });
+  }
+  B.add({ ...base, pts: [[-half * 0.88, foot], [half * 0.88, foot], [half, h - rim], [-half, h - rim]], fill: hsl(glaze), z: 24.1 });
+  B.add({ ...base, pts: [[half * 0.35, foot], [half * 0.88, foot], [half, h - rim], [half * 0.4, h - rim]], fill: hsl(glaze, -8), z: 24.2 });
+  B.add({ ...base, pts: [[-half - 1, h - rim], [half + 1, h - rim], [half + 1, h], [-half - 1, h]], fill: hsl(glaze, 6), z: 24.3 });
+  // Soil sits behind the trunk; the rim hides its front half.
+  B.add({ ...base, shape: 'ellipse', x: 0, y: h, rx: half - 0.5, ry: 1.6, fill: hsl({ h: 28, s: 30, l: 22 }), z: 19 });
+}
+
+const EXTRAS = { grass, flowers, mushrooms, rocks, fallen, snow, fireflies, nest, swing, moss, pot };
 
 export function addExtras(B, rng) {
   for (const [id, on] of Object.entries(B.g.extras)) {

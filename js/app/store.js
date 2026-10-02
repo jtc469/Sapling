@@ -1,6 +1,8 @@
 // App state, persisted to localStorage. All writes go through update() so
 // every view re-renders from the same source of truth.
 
+import { SPECIES_IDS } from '../tree/index.js';
+
 const KEY = 'sapling.data.v1';
 export const COLOUR_SLOTS = 8;
 
@@ -60,11 +62,13 @@ export const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now(
 
 export const moduleById = (id) => data.modules.find((m) => m.id === id);
 
-// New modules get a species no other active module uses, in this order.
-const SPECIES_ORDER = ['oak', 'sakura', 'pine', 'maple', 'birch', 'jacaranda', 'willow', 'fir', 'citrus', 'acacia', 'palm', 'baobab', 'juniper', 'bamboo', 'saguaro', 'wisp'];
+// New modules get a random species, preferring ones no active module uses
+// so each module's trees stay recognisable in the forest.
 export function nextSpecies() {
   const used = new Set(data.modules.filter((m) => !m.archived).map((m) => m.species));
-  return SPECIES_ORDER.find((s) => !used.has(s)) ?? 'mixed';
+  const free = SPECIES_IDS.filter((s) => !used.has(s));
+  const pool = free.length ? free : SPECIES_IDS;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // Colours follow the module, never its rank: a new module takes the lowest
@@ -76,8 +80,8 @@ function freeColour() {
 }
 
 export const actions = {
-  addModule({ name, species }) {
-    const m = { id: uid(), name: name.trim(), colour: freeColour(), species, createdAt: Date.now(), archived: false };
+  addModule({ name }) {
+    const m = { id: uid(), name: name.trim(), colour: freeColour(), species: nextSpecies(), createdAt: Date.now(), archived: false };
     store.update((d) => {
       d.modules.push(m);
       d.settings.lastModuleId ??= m.id;

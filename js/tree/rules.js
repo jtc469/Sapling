@@ -120,4 +120,7 @@ function cactus(B) {
   }
 }
 
-export const RULES = { fork, leader, palm, cactus };
+// Crystals and geodes have no skeleton; their foliage layer draws the whole form.
+function mineral() {}
+
+export const RULES = { fork, leader, palm, cactus, mineral };

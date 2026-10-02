@@ -1,11 +1,11 @@
 // Focus: pick a module and duration, watch the tree grow, or give up.
 
-import { store, actions, moduleById, nextSpecies } from '../store.js';
+import { store, actions, moduleById } from '../store.js';
 import * as session from '../session.js';
 import { treeFor, sessionSvg } from '../trees.js';
 import { renderTree, MUTATIONS } from '../../tree/index.js';
 import { hashString } from '../../tree/rng.js';
-import { esc, dot, speciesName, rarityChip, confirmDialog, toast } from '../ui.js';
+import { esc, dot, speciesName, speciesNoun, rarityChip, confirmDialog, toast } from '../ui.js';
 import { formatClock, formatMinutes } from '../time.js';
 
 const PRESETS = [15, 25, 45, 60, 90];
@@ -102,7 +102,7 @@ function idleHtml(data, modules) {
             <span aria-hidden="true">min</span>
           </label>
         </div>
-        <p class="hint">You'll plant ${speciesText}. Longer sessions grow bigger trees.</p>
+        <p class="hint">You'll grow ${speciesText}. Longer sessions grow bigger ones.</p>
         <button class="primary big" type="button" data-action="start">Start focusing</button>
         <p class="fine">${settings.strict
           ? `Strict mode is on: leaving this tab for more than ${settings.graceSec}s kills your tree.`
@@ -216,9 +216,9 @@ function onSubmit(e) {
   const form = e.target.dataset.form;
   const value = new FormData(e.target).get(form === 'note' ? 'note' : 'name');
   if (form === 'first-module' && value.trim()) {
-    const m = actions.addModule({ name: value, species: nextSpecies() });
+    const m = actions.addModule({ name: value });
     draft.moduleId = m.id;
-    toast(`Added ${m.name}. It grows ${speciesName(m.species)} trees.`);
+    toast(`Added ${m.name}. It grows ${speciesNoun(m.species)}.`);
   }
   if (form === 'note') {
     actions.setNote(session.result().id, value);

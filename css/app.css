@@ -109,7 +109,11 @@ body {
   background: var(--bg);
   color: var(--text);
   font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* No text caret on static text (e.g. with caret browsing on); fields keep theirs. */
+  caret-color: transparent;
 }
+
+input, textarea, [contenteditable] { caret-color: auto; }
 
 a { color: var(--accent); }
 
@@ -572,6 +576,7 @@ thead th { font-size: 12px; font-weight: 600; color: var(--muted); }
 .module-row .module-name:hover, .module-row .module-name:focus { border-color: var(--border); background: var(--surface-2); }
 .module-row .module-name.static { padding: 0 10px; }
 .module-list.archived .module-row { opacity: 0.8; }
+.module-species { flex: none; min-width: 72px; text-align: right; font-size: 13px; color: var(--text-2); }
 
 .colour-picker { position: relative; }
 .colour-picker summary { list-style: none; cursor: pointer; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; }
@@ -684,7 +689,7 @@ dialog.confirm p { margin: 0 0 18px; color: var(--text-2); }
 
   .module-row { flex-wrap: wrap; }
   .module-row .module-name { flex-basis: calc(100% - 90px); }
-  .module-row select { flex: 1; }
+  .module-row .module-species { flex: 1; text-align: left; }
   .history td.note { min-width: 160px; }
   .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
 }

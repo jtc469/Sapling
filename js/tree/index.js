@@ -31,9 +31,12 @@ export function growTree({ species, seed, size = 0.5, mutations }) {
 
   const maxD = Math.max(1, ...B.branches.flatMap((b) => b.pts.map((p) => p.d)));
   const bounds = measure(B);
-  const fit = Math.min(1, MAX_HEIGHT / bounds.top, MAX_HALF_WIDTH / Math.max(bounds.right, -bounds.left, 1));
+  // A potted tree is drawn raised by the pot's height (see renderer).
+  const pot = B.pot ?? null;
+  const lift = pot?.h ?? 0;
+  const fit = Math.min(1, MAX_HEIGHT / (bounds.top + lift), MAX_HALF_WIDTH / Math.max(bounds.right, -bounds.left, 1));
 
-  return { genome, branches: B.branches, prims: B.prims, maxD, bounds, fit };
+  return { genome, branches: B.branches, prims: B.prims, maxD, bounds, fit, pot, lift };
 }
 
 function measure(B) {
