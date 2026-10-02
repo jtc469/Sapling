@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sapling</title>
+  <meta name="description" content="A focus timer that grows a tree for every revision session.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 30V15' stroke='%236b4a2b' stroke-width='3' stroke-linecap='round'/%3E%3Cellipse cx='10' cy='12' rx='7' ry='4' transform='rotate(-30 10 12)' fill='%233f8f5a'/%3E%3Cellipse cx='22' cy='9' rx='8' ry='4.5' transform='rotate(-35 22 9)' fill='%2356a86f'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="app-bar">
+    <a class="brand" href="#focus" aria-label="Sapling home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 30V15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><ellipse cx="10" cy="12" rx="7" ry="4" transform="rotate(-30 10 12)" fill="var(--accent)"/><ellipse cx="22" cy="9" rx="8" ry="4.5" transform="rotate(-35 22 9)" fill="var(--accent)" opacity=".75"/></svg>
+      Sapling
+    </a>
+    <a class="live-pill" id="livePill" href="#focus" hidden></a>
+    <nav class="tabs" aria-label="Main">
+      <a href="#focus" data-nav="focus">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+        <span>Focus</span>
+      </a>
+      <a href="#forest" data-nav="forest">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21v-4M16 21v-6"/><path d="M8 17c-3 0-5-2-5-5s3-7 5-9c2 2 5 6 5 9s-2 5-5 5z"/><path d="M16 15c-2.5 0-4-1.6-4-4 0-2.2 2-5 4-7 2 2 4 4.8 4 7 0 2.4-1.5 4-4 4z"/></svg>
+        <span>Forest</span>
+      </a>
+      <a href="#stats" data-nav="stats">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>
+        <span>Stats</span>
+      </a>
+      <a href="#modules" data-nav="modules">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>
+        <span>Modules</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <dialog id="confirm" class="confirm">
+    <form method="dialog">
+      <h2></h2>
+      <p></p>
+      <div class="row end">
+        <button value="cancel">Cancel</button>
+        <button value="ok" class="primary">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app/main.js"></script>
+</body>
+</html>

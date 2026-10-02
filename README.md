@@ -1,9 +1,14 @@
 # Sapling
 
-A stripped-down study timer in the spirit of the Forest app: focus on a module, grow a tree.
+A stripped-down study timer in the spirit of the Forest app: focus on a module, grow a tree. Give up, and it withers.
 
-Phase 1 (done): procedural tree engine + **Tree Lab** playground for tuning it.
-Phase 2 (next): modules, focus timer, session log, your forest.
+- **Focus**: pick a module and a duration, then watch a procedurally generated tree grow in real time.
+- **Strict mode**: leave the tab for longer than the grace period and your tree dies.
+- **Forest**: every session's tree, grouped by day and filterable by module.
+- **Stats**: focused time, trees grown, streaks, time per module, the last 7 days and full history.
+- **Modules**: each module grows its own species of tree and has its own colour.
+
+Everything is stored in your browser (`localStorage`). Use *Modules > Export backup* to keep a copy.
 
 ## Run
 
@@ -11,7 +16,23 @@ Phase 2 (next): modules, focus timer, session log, your forest.
 python serve.py
 ```
 
-Then open http://localhost:5173/playground.html. (ES modules need a server; `serve.py` disables caching so edits show on reload.)
+| Page | URL |
+| --- | --- |
+| App | http://localhost:5173/ |
+| Tree Lab (tune the generator) | http://localhost:5173/playground.html |
+
+ES modules need a server; `serve.py` disables caching so edits show on reload.
+Add `?speed=60` to the app URL to make a minute pass every second while testing.
+
+## App (`js/app/`)
+
+| File | Role |
+| --- | --- |
+| `store.js` | State and persistence; all writes go through `store.update()` |
+| `session.js` | Focus-session engine: timer, completion, strict mode, resume after reload |
+| `trees.js` | Builds and caches each session's tree |
+| `views/` | `focus`, `forest`, `stats`, `modules` |
+| `main.js` | Hash router and app chrome |
 
 ## Tree engine (`js/tree/`)
 
