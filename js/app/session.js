@@ -8,6 +8,8 @@ import { SPECIES_IDS } from '../tree/index.js';
 // Dev aid: ?speed=60 makes a minute pass every second.
 const SPEED = Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1);
 const HEARTBEAT_MS = 5000;
+// A session can be cancelled for free during its first minute.
+export const CANCEL_WINDOW_MS = 60000;
 
 const tickers = new Set();
 let timer = null;
@@ -27,7 +29,8 @@ export function status(now = Date.now()) {
   if (!a) return null;
   const total = a.minutes * 60000;
   const elapsed = Math.min(total, (now - a.start) * SPEED);
-  return { active: a, elapsed, total, remaining: total - elapsed, progress: elapsed / total, hidden: hiddenAt != null };
+  const cancelLeft = Math.max(0, CANCEL_WINDOW_MS - elapsed);
+  return { active: a, elapsed, total, remaining: total - elapsed, progress: elapsed / total, hidden: hiddenAt != null, cancelLeft, cancellable: cancelLeft > 0 };
 }
 
 // The most recent finished session, shown on the focus screen until dismissed.
@@ -47,6 +50,16 @@ export function start(moduleId, minutes) {
 }
 
 export const giveUp = () => finish(false);
+
+// Drops the session without a trace: no tree, no history, no time logged.
+// Returns false if the cancel window has already closed.
+export function cancel() {
+  const s = status();
+  if (!s?.cancellable) return false;
+  hiddenAt = null;
+  store.update((d) => { d.active = null; });
+  return true;
+}
 
 function finish(completed, at = Date.now()) {
   const s = status(at);

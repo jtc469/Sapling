@@ -124,7 +124,11 @@ function activeHtml(a) {
         <div class="clock" data-clock aria-live="off">--:--</div>
         <div class="meter" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="100" data-meter><span></span></div>
         <p class="hint">Growing ${article(speciesName(a.species))} ${speciesName(a.species)} · ${formatMinutes(a.minutes)} session</p>
-        <button class="ghost danger" type="button" data-action="give-up">Give up</button>
+        <div class="row">
+          <button type="button" data-action="cancel" hidden>Cancel</button>
+          <button class="ghost danger" type="button" data-action="give-up">Give up</button>
+          <span class="fine" data-cancel-note hidden></span>
+        </div>
         <p class="fine">${strict ? `Stay on this tab. Leaving for more than ${graceSec}s kills your tree.` : 'Strict mode is off.'}</p>
       </div>
     </section>`;
@@ -166,6 +170,12 @@ function onTick(s) {
   const meter = root.querySelector('[data-meter]');
   meter.firstElementChild.style.width = `${s.progress * 100}%`;
   meter.setAttribute('aria-valuenow', Math.round(s.progress * 100));
+  // First minute: a free Cancel instead of Give up.
+  root.querySelector('[data-action="cancel"]').hidden = !s.cancellable;
+  root.querySelector('[data-action="give-up"]').hidden = s.cancellable;
+  const note = root.querySelector('[data-cancel-note]');
+  note.hidden = !s.cancellable;
+  note.textContent = `Free to cancel for ${Math.ceil(s.cancelLeft / 1000)}s`;
   if (Math.abs(s.progress - lastRendered) >= 0.0015 && liveTree) {
     lastRendered = s.progress;
     root.querySelector('.stage.live').innerHTML = renderTree(liveTree, { progress: s.progress });
@@ -181,6 +191,10 @@ async function onClick(e) {
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'start') session.start(draft.moduleId, draft.minutes);
   if (action === 'again') { session.dismissResult(); rerender(); }
+  if (action === 'cancel') {
+    if (session.cancel()) toast('Session cancelled. No tree was planted.');
+    else toast("The free minute is over. Use Give up instead.");
+  }
   if (action === 'give-up') {
     const ok = await confirmDialog({ title: 'Give up?', body: 'Your tree will wither. The time so far still counts.', confirm: 'Give up', danger: true });
     if (ok) session.giveUp();

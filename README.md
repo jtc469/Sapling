@@ -3,6 +3,7 @@
 A stripped-down study timer in the spirit of the Forest app: focus on a module, grow a tree. Give up, and it withers.
 
 - **Focus**: pick a module and a duration, then watch a procedurally generated tree grow in real time.
+- **Free cancel**: changed your mind? Cancel in the first minute and nothing is recorded.
 - **Strict mode**: leave the tab for longer than the grace period and your tree dies.
 - **Forest**: every session's tree, grouped by day and filterable by module.
 - **Stats**: focused time, trees grown, streaks, time per module, the last 7 days and full history.

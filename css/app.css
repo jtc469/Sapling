@@ -101,6 +101,9 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+/* Component display rules (e.g. buttons' inline-flex) must not override [hidden]. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -189,7 +192,6 @@ a { color: var(--accent); }
   font-variant-numeric: tabular-nums;
 }
 
-.live-pill[hidden] { display: none; }
 
 main {
   max-width: 1120px;
@@ -211,6 +213,7 @@ main {
 .label { font-size: 14px; font-weight: 600; color: var(--text-2); margin: 20px 0 8px; }
 .hint { color: var(--text-2); margin: 18px 0; }
 .fine { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+.row > .fine { margin: 0; }
 .section-title { font-size: 16px; margin: 32px 0 12px; }
 
 /* ---------- Controls ---------- */
