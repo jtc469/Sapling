@@ -1,0 +1,8 @@
+{
+  "name": "sapling",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python serve.py"
+  }
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tree Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/playground.css">
+</head>
+<body>
+  <header class="top">
+    <div class="title">
+      <h1>Tree Lab</h1>
+      <p>Procedural trees for Sapling. Every card is one seed. Click a tree to inspect its genome.</p>
+    </div>
+    <div class="summary" id="summary" aria-live="polite"></div>
+  </header>
+
+  <section class="controls" aria-label="Generator controls">
+    <label>Species
+      <select id="species"></select>
+    </label>
+    <label>Mutation
+      <select id="mutation"></select>
+    </label>
+    <label>Rarity
+      <select id="rarity"></select>
+    </label>
+    <label>Trees
+      <select id="count">
+        <option>12</option><option selected>24</option><option>48</option><option>96</option>
+      </select>
+    </label>
+    <label class="seed">Seed
+      <span class="row">
+        <input id="seed" type="number" min="0" step="1">
+        <button id="reroll" type="button" title="New seed (R)">Reroll</button>
+      </span>
+    </label>
+    <label class="slider">Size <output id="sizeOut"></output>
+      <input id="size" type="range" min="0" max="1" step="0.01">
+    </label>
+    <label class="slider">Growth <output id="progressOut"></output>
+      <span class="row">
+        <input id="progress" type="range" min="0" max="1" step="0.01">
+        <button id="play" type="button" title="Play growth (Space)">Play</button>
+      </span>
+    </label>
+    <label class="check">
+      <input id="dead" type="checkbox"> Gave up (dead)
+    </label>
+  </section>
+
+  <main id="grid" class="grid"></main>
+
+  <dialog id="detail">
+    <div class="detail">
+      <div class="detail-tree" id="detailTree"></div>
+      <div class="detail-info">
+        <div class="detail-head">
+          <h2 id="detailName"></h2>
+          <button type="button" class="close" id="detailClose" aria-label="Close">×</button>
+        </div>
+        <div id="detailTags" class="chips"></div>
+        <pre id="detailGenome"></pre>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/playground.js"></script>
+</body>
+</html>
