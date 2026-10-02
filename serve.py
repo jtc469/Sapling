@@ -1,8 +1,9 @@
 """Static dev server with caching disabled, so edited JS modules always reload."""
 
+import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-PORT = 5173
+PORT = int(os.environ.get("PORT", 5173))
 
 
 class NoCacheHandler(SimpleHTTPRequestHandler):
